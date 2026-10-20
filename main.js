@@ -19,7 +19,7 @@ if (projectFileNames.length === 0) {
 for (const runtimeHandler of runtimeHandlers) {
   if (runtimeHandler.detectRuntime(projectFileNames)) {
     console.log(
-      `Found the manifest file.\nProject Runtime: ${runtimeHandler.name}\nStarting the evaluation now. `,
+      `Found the manifest file. Starting the evaluation now.\nDetected runtime: ${runtimeHandler.name}.`,
     );
     const presentLockfiles =
       runtimeHandler.findPresentLockfiles(projectFileNames);

@@ -38,16 +38,9 @@ const nodeRuntimeHandler = {
       const installedNodeVersion = process.versions.node;
       compareNodeVersions(nodeRequirement, installedNodeVersion);
     }
-    let declaredDependencies;
-    try {
-      declaredDependencies = new Map(
-        Object.entries(packageJsonContent.dependencies),
-      );
-    } catch (err) {
-      throw new Error(
-        `No depenencies list found in the manifest file.${path.join(process.cwd(), "package.json")}`,
-      );
-    }
+    const declaredDependencies = new Map(
+      Object.entries(packageJsonContent.dependencies ?? {}),
+    );
 
     const activeLockfile = resolveActiveLockfile(presentLockfiles);
     const lockedDependencies = activeLockfile.parseLockfile(

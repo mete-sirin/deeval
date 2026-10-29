@@ -23,7 +23,7 @@ function parsePnpmLockfile(lockfileName) {
     (yamlDocument) => yamlDocument.toJS(),
   );
   const lockedDependenciesMap = new Map(
-    Object.entries(yamlDocuments.at(-1).importers["."].dependencies),
+    Object.entries(yamlDocuments.at(-1).importers["."].dependencies ?? {}),
   );
   return lockedDependenciesMap;
 }

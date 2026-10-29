@@ -39,7 +39,8 @@ export default function resolveActiveLockfile(projectRoot, manifest) {
   const findings = [];
 
   if (presentLockfiles.length === 0) {
-    const packageManager = declaredPackageManager ?? "npm";
+    const packageManager =
+      declaredPackageManager ?? (manifest?.engines?.bun ? "bun" : "npm");
     findings.push({
       code: "LOCKFILE_MISSING",
       severity: "warning",

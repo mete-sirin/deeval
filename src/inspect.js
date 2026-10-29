@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import checkNodeRuntime from "./runtime/node.js";
+import checkNodeRuntime, { readNodeRequirements } from "./runtime/node.js";
+import checkBunRuntime from "./runtime/bun.js";
+import { installedNodeVersion, installedBunVersion } from "./runtime/installed.js";
 import resolveActiveLockfile from "./lockfiles/index.js";
 import { DEPENDENCY_SECTIONS, UnsupportedLockfileError } from "./lockfiles/shared.js";
 import compareDependencies from "./checks/dependencies.js";
@@ -44,8 +46,6 @@ export default function inspect(projectRoot) {
     return result;
   }
 
-  result.findings.push(checkNodeRuntime(manifest));
-
   const { lockfile, packageManager, findings } = resolveActiveLockfile(
     projectRoot,
     manifest,
@@ -53,6 +53,21 @@ export default function inspect(projectRoot) {
   result.packageManager = packageManager;
   result.lockfileName = lockfile?.lockfileName;
   result.findings.push(...findings);
+
+  // packageManager already accounts for bun.lock, bun.lockb and the packageManager field.
+  const isBunProject = packageManager === "bun" || Boolean(manifest.engines?.bun);
+  result.runtime = isBunProject ? "Bun" : "Node.js";
+  const nodeRequirements = readNodeRequirements(projectRoot, manifest);
+  // Bun projects only get a Node.js check when they declare a Node.js requirement.
+  if (!isBunProject || nodeRequirements.length > 0) {
+    result.findings.push(
+      ...checkNodeRuntime(nodeRequirements, installedNodeVersion()),
+    );
+  }
+  if (isBunProject) {
+    result.findings.push(...checkBunRuntime(manifest, installedBunVersion()));
+  }
+
   if (!lockfile) return result;
 
   let lockedDependencies;

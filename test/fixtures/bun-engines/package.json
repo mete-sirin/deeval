@@ -1,0 +1,6 @@
+{
+  "name": "bun-engines",
+  "engines": {
+    "bun": ">=1.1"
+  }
+}

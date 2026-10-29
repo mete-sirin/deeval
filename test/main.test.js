@@ -1,14 +1,28 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { after } from "node:test";
 
 const mainPath = path.resolve(import.meta.dirname, "../main.js");
 
-function runIn(fixtureName) {
+// deeval is started via process.execPath, so PATH only needs the binaries it
+// looks up itself. A fake `bun` keeps results independent of the machine.
+const fakeBinDir = fs.mkdtempSync(path.join(os.tmpdir(), "deeval-bin-"));
+const emptyBinDir = fs.mkdtempSync(path.join(os.tmpdir(), "deeval-empty-"));
+fs.writeFileSync(path.join(fakeBinDir, "bun"), "#!/bin/sh\necho 1.2.0\n", { mode: 0o755 });
+after(() => {
+  fs.rmSync(fakeBinDir, { recursive: true, force: true });
+  fs.rmSync(emptyBinDir, { recursive: true, force: true });
+});
+
+function runIn(fixtureName, { binDir = fakeBinDir } = {}) {
   return spawnSync(process.execPath, [mainPath], {
     cwd: path.join(import.meta.dirname, "fixtures", fixtureName),
     encoding: "utf8",
+    env: { ...process.env, PATH: binDir },
   });
 }
 
@@ -100,6 +114,35 @@ test("an uninstalled project warns and suggests installing", () => {
 test("yarn Plug'n'Play projects skip the install check", () => {
   const result = runIn("yarn-basic");
   assert.match(result.stdout, /\[INFO\] +Yarn Plug'n'Play has no node_modules/);
+});
+
+test("a Bun project is checked against engines.bun, not engines.node", () => {
+  const result = runIn("bun-engines");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Runtime: Bun/);
+  assert.match(result.stdout, /\[OK\] +Bun 1\.2\.0 satisfies >=1\.1 \(engines\.bun\)/);
+  assert.doesNotMatch(result.stdout, /Node\.js/);
+  assert.match(result.stdout, /Run `bun install` to generate a lockfile/);
+});
+
+test("a Bun project without engines.bun warns about it", () => {
+  const result = runIn("bun-basic");
+  assert.match(result.stdout, /Runtime: Bun/);
+  assert.match(result.stdout, /\[WARN\] +No Bun version requirement/);
+});
+
+test("a Bun project without Bun installed exits 1", () => {
+  const result = runIn("bun-engines", { binDir: emptyBinDir });
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stdout, /\[ERROR\] This is a Bun project, but Bun is not installed/);
+});
+
+test("a .nvmrc mismatch is a warning that suggests nvm use", () => {
+  const result = runIn("nvmrc-mismatch");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\[WARN\] +Node\.js .* does not match 16\.20\.2 from \.nvmrc/);
+  assert.match(result.stdout, /Run `nvm use`/);
+  assert.doesNotMatch(result.stdout, /No Node\.js version requirement/);
 });
 
 test("a lockfile entry no longer in package.json is a warning", () => {

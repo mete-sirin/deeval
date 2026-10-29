@@ -31,7 +31,7 @@ test("an out-of-sync project exits 1 and suggests one install", () => {
   assert.equal(result.status, 1, result.stderr);
   assert.match(result.stdout, /\[ERROR\] zod is in package\.json but missing/);
   assert.match(result.stdout, /\[WARN\] +yaml is declared as \^3\.0\.0/);
-  assert.match(result.stdout, /Summary: 2 errors, 1 warning/);
+  assert.match(result.stdout, /Summary: 2 errors, 2 warnings/);
   assert.equal(result.stdout.match(/`pnpm install`/g)?.length, 1);
 });
 
@@ -77,6 +77,30 @@ for (const [fixtureName, message, suggestion] of unsupportedProjects) {
     assert.match(result.stdout, suggestion);
   });
 }
+
+test("an installed npm project passes the install check", () => {
+  const result = runIn("npm-installed");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\[OK\] +All 3 dependencies are installed at their locked versions/);
+  assert.match(result.stdout, /Summary: no problems found/);
+});
+
+test("pnpm's symlinked node_modules layout is followed", () => {
+  const result = runIn("pnpm-basic");
+  assert.match(result.stdout, /\[OK\] +All 1 dependencies are installed/);
+});
+
+test("an uninstalled project warns and suggests installing", () => {
+  const result = runIn("bun-basic");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\[WARN\] +No node_modules directory/);
+  assert.match(result.stdout, /Run `bun install` to sync bun\.lock and node_modules/);
+});
+
+test("yarn Plug'n'Play projects skip the install check", () => {
+  const result = runIn("yarn-basic");
+  assert.match(result.stdout, /\[INFO\] +Yarn Plug'n'Play has no node_modules/);
+});
 
 test("a lockfile entry no longer in package.json is a warning", () => {
   const result = runIn("npm-stale");

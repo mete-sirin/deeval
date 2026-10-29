@@ -7,6 +7,11 @@
  * }} Finding
  */
 
+// One install fixes both a stale lockfile and a stale node_modules, so every
+// check that needs it shares this exact text and the report lists it once.
+export const installSuggestion = (packageManager, lockfileName) =>
+  `Run \`${packageManager} install\` to sync ${lockfileName} and node_modules with package.json.`;
+
 // Problems are printed last so they sit right above the summary.
 const SEVERITY_ORDER = ["ok", "info", "warning", "error"];
 const SEVERITY_LABELS = {

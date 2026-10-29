@@ -11,3 +11,6 @@ export class UnsupportedLockfileError extends Error {
     this.suggestion = suggestion;
   }
 }
+
+// pnpm appends resolved peers to versions, e.g. 1.2.3(react@18.0.0).
+export const stripPeerSuffix = (version) => version.replace(/\(.*$/, "");

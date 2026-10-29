@@ -42,6 +42,55 @@ test("a project without a lockfile warns but exits 0", () => {
   assert.match(result.stdout, /1\. Run `npm install` to generate a lockfile\./);
 });
 
+const basicProjects = [
+  ["npm-basic", "npm", "package-lock.json"],
+  ["pnpm8-basic", "pnpm", "pnpm-lock.yaml"],
+  ["yarn-basic", "yarn", "yarn.lock"],
+  ["bun-basic", "bun", "bun.lock"],
+];
+
+for (const [fixtureName, packageManager, lockfileName] of basicProjects) {
+  test(`${packageManager} project with dev and optional dependencies passes`, () => {
+    const result = runIn(fixtureName);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(
+      result.stdout,
+      new RegExp(`Package manager: ${packageManager} \\(${lockfileName}\\)`),
+    );
+    assert.match(result.stdout, new RegExp(`All 3 dependencies match ${lockfileName}`));
+  });
+}
+
+/** @type {[string, RegExp, RegExp][]} */
+const unsupportedProjects = [
+  ["yarn-classic", /Yarn classic \(v1\)/, /yarn set version stable/],
+  ["bun-binary", /binary lockfile/, /bun install --save-text-lockfile/],
+  ["npm-v1", /lockfileVersion 1/, /npm 7 or newer/],
+];
+
+for (const [fixtureName, message, suggestion] of unsupportedProjects) {
+  test(`${fixtureName} is reported as unsupported, not crashed on`, () => {
+    const result = runIn(fixtureName);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, message);
+    assert.match(result.stdout, /Dependencies were not compared/);
+    assert.match(result.stdout, suggestion);
+  });
+}
+
+test("a lockfile entry no longer in package.json is a warning", () => {
+  const result = runIn("npm-stale");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\[WARN\] +picocolors is in package-lock\.json but no longer declared/);
+});
+
+test("a lockfile that doesn't match packageManager is a warning", () => {
+  const result = runIn("package-manager-mismatch");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /declares pnpm as its packageManager/);
+  assert.match(result.stdout, /Run `pnpm install` to create a pnpm lockfile/);
+});
+
 test("a directory without package.json exits 2", () => {
   const result = runIn("not-javascript");
   assert.equal(result.status, 2, result.stderr);

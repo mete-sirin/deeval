@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import checkNodeRuntime from "./runtime/node.js";
 import resolveActiveLockfile from "./lockfiles/index.js";
+import { DEPENDENCY_SECTIONS, UnsupportedLockfileError } from "./lockfiles/shared.js";
 import compareDependencies from "./checks/dependencies.js";
 
 /**
@@ -44,28 +45,45 @@ export default function inspect(projectRoot) {
 
   result.findings.push(checkNodeRuntime(manifest));
 
-  const { lockfile, packageManager, findings } =
-    resolveActiveLockfile(projectRoot);
+  const { lockfile, packageManager, findings } = resolveActiveLockfile(
+    projectRoot,
+    manifest,
+  );
   result.packageManager = packageManager;
   result.lockfileName = lockfile?.lockfileName;
   result.findings.push(...findings);
-  if (!lockfile?.parse) return result;
+  if (!lockfile) return result;
 
   let lockedDependencies;
   try {
-    lockedDependencies = lockfile.parse(projectRoot, lockfile.lockfileName);
+    const rawLockfileContent = fs.readFileSync(
+      path.join(projectRoot, lockfile.lockfileName),
+      "utf8",
+    );
+    lockedDependencies = lockfile.parse(rawLockfileContent, lockfile.lockfileName);
   } catch (err) {
-    result.findings.push({
-      code: "LOCKFILE_INVALID",
-      severity: "error",
-      message: `${lockfile.lockfileName} could not be parsed: ${err.message}`,
-      suggestion: `Regenerate ${lockfile.lockfileName} with \`${packageManager} install\`.`,
-    });
+    result.findings.push(
+      err instanceof UnsupportedLockfileError
+        ? {
+            code: "LOCKFILE_UNSUPPORTED",
+            severity: "warning",
+            message: `${err.message} Dependencies were not compared.`,
+            suggestion: err.suggestion,
+          }
+        : {
+            code: "LOCKFILE_INVALID",
+            severity: "error",
+            message: `${lockfile.lockfileName} could not be parsed: ${err.message}`,
+            suggestion: `Regenerate ${lockfile.lockfileName} with \`${lockfile.packageManager} install\`.`,
+          },
+    );
     return result;
   }
 
   const declaredDependencies = new Map(
-    Object.entries(manifest.dependencies ?? {}),
+    DEPENDENCY_SECTIONS.flatMap((section) =>
+      Object.entries(manifest[section] ?? {}),
+    ),
   );
   result.findings.push(
     ...compareDependencies(declaredDependencies, lockedDependencies, lockfile),

@@ -39,7 +39,7 @@ export default function compareDependencies(
 
     // Dist-tags, git URLs, workspace: and npm: aliases are not semver ranges,
     // and links or tarballs are not semver versions.
-    const lockedVersion = semver.valid(stripPeerSuffix(entry.version));
+    const lockedVersion = semver.valid(stripPeerSuffix(entry.version ?? ""));
     if (!semver.validRange(ver) || !lockedVersion) {
       findings.push({
         code: "DEPENDENCY_NOT_CHECKED",
@@ -56,6 +56,16 @@ export default function compareDependencies(
         suggestion: syncSuggestion,
       });
     }
+  }
+
+  for (const name of lockedDependencies.keys()) {
+    if (declaredDependencies.has(name)) continue;
+    findings.push({
+      code: "DEPENDENCY_NOT_DECLARED",
+      severity: "warning",
+      message: `${name} is in ${lockfileName} but no longer declared in package.json.`,
+      suggestion: syncSuggestion,
+    });
   }
 
   if (findings.length === 0) {

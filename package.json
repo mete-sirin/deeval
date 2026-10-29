@@ -1,18 +1,45 @@
 {
   "name": "deeval",
   "version": "1.0.0",
-  "description": "development enviroment evaluation tool",
-  "main": "main.js",
-  "scripts": {
-    "test": "node --test",
-    "typecheck": "tsc -p jsconfig.json",
-    "main": "node main.js"
+  "description": "Checks a Node.js or Bun project: runtime version, manifest vs. lockfile, and installed packages",
+  "keywords": [
+    "lockfile",
+    "package.json",
+    "dependencies",
+    "node",
+    "bun",
+    "npm",
+    "pnpm",
+    "yarn",
+    "diagnostics",
+    "cli"
+  ],
+  "homepage": "https://github.com/mete-sirin/deeval#readme",
+  "bugs": {
+    "url": "https://github.com/mete-sirin/deeval/issues"
   },
-  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mete-sirin/deeval.git"
+  },
   "author": "Mete Sirin",
   "license": "ISC",
+  "type": "module",
+  "bin": {
+    "deeval": "bin/deeval.js"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "scripts": {
+    "start": "node bin/deeval.js",
+    "test": "node --test",
+    "typecheck": "tsc -p jsconfig.json",
+    "prepublishOnly": "pnpm test && pnpm typecheck"
+  },
   "engines": {
-    "node": ">18.0.0"
+    "node": ">=18"
   },
   "devEngines": {
     "packageManager": {
@@ -22,7 +49,6 @@
     }
   },
   "packageManager": "pnpm@12.14.0",
-  "type": "module",
   "dependencies": {
     "semver": "^7.8.5",
     "yaml": "^2.9.1"

@@ -71,7 +71,10 @@ export default function compareDependencies(
     findings.push({
       code: "DEPENDENCIES_OK",
       severity: "ok",
-      message: `All ${declaredDependencies.size} dependencies match ${lockfileName}.`,
+      message: {
+        0: "No dependencies are declared in package.json.",
+        1: `1 dependency matches ${lockfileName}.`,
+      }[declaredDependencies.size] ?? `All ${declaredDependencies.size} dependencies match ${lockfileName}.`,
     });
   }
   return findings;

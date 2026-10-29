@@ -46,6 +46,20 @@ export default function checkInstalledDependencies(
   manifest,
   { lockfileName, packageManager },
 ) {
+  // Optional wins when a package is listed twice, as it does for npm. Stale
+  // lockfile entries have no section and are already reported by compareDependencies.
+  const dependenciesToCheck = [...lockedDependencies]
+    .map(([name, { version }]) => ({
+      name,
+      version,
+      section: ["optionalDependencies", "devDependencies", "dependencies"].find(
+        (section) => manifest[section]?.[name] !== undefined,
+      ),
+    }))
+    .filter(({ section }) => section);
+  // Nothing to install, so a missing node_modules is expected.
+  if (dependenciesToCheck.length === 0) return [];
+
   if (packageManager === "yarn" && yarnNodeLinker(projectRoot) === "pnp") {
     return [
       {
@@ -71,15 +85,7 @@ export default function checkInstalledDependencies(
   }
 
   const findings = [];
-  let checkedCount = 0;
-  for (const [name, { version }] of lockedDependencies) {
-    // Optional wins when a package is listed twice, as it does for npm.
-    const section = ["optionalDependencies", "devDependencies", "dependencies"].find(
-      (section) => manifest[section]?.[name] !== undefined,
-    );
-    if (!section) continue; // stale lockfile entry, already reported by compareDependencies
-
-    checkedCount++;
+  for (const { name, version, section } of dependenciesToCheck) {
     // fs follows symlinks, so pnpm's and bun's isolated layouts resolve here too.
     const installedManifest = readJsonFile(
       path.join(nodeModulesPath, name, "package.json"),
@@ -109,7 +115,10 @@ export default function checkInstalledDependencies(
     findings.push({
       code: "INSTALLED_OK",
       severity: "ok",
-      message: `All ${checkedCount} dependencies are installed at their locked versions.`,
+      message:
+        dependenciesToCheck.length === 1
+          ? "1 dependency is installed at its locked version."
+          : `All ${dependenciesToCheck.length} dependencies are installed at their locked versions.`,
     });
   }
   return findings;

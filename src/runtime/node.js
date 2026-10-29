@@ -1,25 +1,4 @@
-const VERSION_REQUIREMENT_REGEX = /^([^\d\s]+)?\s*(\d+(?:\.\d+){0,2})$/;
-
-const COMPARING_RULES = {
-  ">=": (compareFlag) => compareFlag >= 0,
-  "<=": (compareFlag) => compareFlag <= 0,
-  ">": (compareFlag) => compareFlag > 0,
-  "<": (compareFlag) => compareFlag < 0,
-  "=": (compareFlag) => compareFlag === 0,
-  "": (compareFlag) => compareFlag === 0, // exact version like 18.0.0
-};
-
-function compareVersionParts(installedVersion, requiredVersion) {
-  const versionLength = Math.min(
-    requiredVersion.length,
-    installedVersion.length,
-  );
-  for (let i = 0; i < versionLength; i++) {
-    if (installedVersion[i] > requiredVersion[i]) return 1;
-    if (installedVersion[i] < requiredVersion[i]) return -1;
-  }
-  return 0;
-}
+import semver from "semver";
 
 /** @returns {import("../report.js").Finding} */
 export default function checkNodeRuntime(
@@ -37,13 +16,7 @@ export default function checkNodeRuntime(
     };
   }
 
-  const requiredVersionValues = requiredVersionString
-    .trim()
-    .match(VERSION_REQUIREMENT_REGEX);
-  const operator = requiredVersionValues?.[1] ?? "";
-  const isSatisfied = COMPARING_RULES[operator];
-
-  if (!requiredVersionValues || !isSatisfied) {
+  if (!semver.validRange(requiredVersionString)) {
     return {
       code: "NODE_REQUIREMENT_UNSUPPORTED",
       severity: "info",
@@ -51,17 +24,7 @@ export default function checkNodeRuntime(
     };
   }
 
-  const toParts = (versionString) =>
-    versionString
-      .trim()
-      .split(".")
-      .map((text) => Number(text));
-  const compareFlag = compareVersionParts(
-    toParts(installedVersionString),
-    toParts(requiredVersionValues[2]),
-  );
-
-  if (isSatisfied(compareFlag)) {
+  if (semver.satisfies(installedVersionString, requiredVersionString)) {
     return {
       code: "NODE_VERSION_OK",
       severity: "ok",

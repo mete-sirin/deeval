@@ -12,9 +12,16 @@ const satisfied = [
   ["<=18", "18.9.0"],
   ["<20", "19.9.9"],
   ["18.0.0", "18.0.0"],
+  [">=18 <22", "20.0.0"],
+  ["^20 || ^22", "22.3.0"],
+  ["20.x", "20.11.1"],
+  ["~20.10", "20.10.5"],
 ];
 
 const unsatisfied = [
+  [">=18 <22", "22.0.0"],
+  ["^20 || ^22", "21.0.0"],
+  ["~20.10", "20.11.0"],
   [">=20", "18.5.0"],
   [">18.0.0", "18.0.0"],
   ["<=18", "19.0.0"],
@@ -38,7 +45,7 @@ for (const [required, installed] of unsatisfied) {
 }
 
 test("unsupported range syntax is reported, not judged", () => {
-  const finding = check(">=18 <22", "20.0.0");
+  const finding = check("lts/*", "20.0.0");
   assert.equal(finding.code, "NODE_REQUIREMENT_UNSUPPORTED");
   assert.equal(finding.severity, "info");
 });

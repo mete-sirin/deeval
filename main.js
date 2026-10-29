@@ -10,7 +10,7 @@ const projectFileNames = new Set(
   }),
 );
 
-if (projectFileNames.length === 0) {
+if (projectFileNames.size === 0) {
   console.log(
     `Couldn't find any files in this directory. If you have a monorepo for a fullstack web application please run the script in the client and server folders independently.`,
   );
@@ -19,10 +19,9 @@ if (projectFileNames.length === 0) {
 for (const runtimeHandler of runtimeHandlers) {
   if (runtimeHandler.detectRuntime(projectFileNames)) {
     console.log(
-      `Found the manifest file.\nProject Runtime: ${runtimeHandler.name}\nStarting the evaluation now. `,
+      `Found the manifest file. Starting the evaluation now.\nDetected runtime: ${runtimeHandler.name}.`,
     );
-    const presentLockfiles =
-      runtimeHandler.findPresentLockfiles(projectFileNames);
+    const presentLockfiles = runtimeHandler.findPresentLockfiles(projectFileNames);
     runtimeHandler.inspectDependencies(presentLockfiles);
   }
 }

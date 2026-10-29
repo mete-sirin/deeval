@@ -4,12 +4,16 @@
   "description": "development enviroment evaluation tool",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
+    "typecheck": "tsc -p jsconfig.json",
     "main": "node main.js"
   },
   "keywords": [],
   "author": "Mete Sirin",
   "license": "ISC",
+  "engines": {
+    "node": ">18.0.0"
+  },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
@@ -22,5 +26,9 @@
   "dependencies": {
     "yaml": "^2.9.1",
     "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
   }
 }

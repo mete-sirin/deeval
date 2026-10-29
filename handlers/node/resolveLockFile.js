@@ -13,7 +13,7 @@ export default function resolveActiveLockfile(presentLockfiles) {
   const matchedLockfiles = lockfilePriorityOrder.filter((lockfileName) =>
     presentLockfiles.has(lockfileName),
   );
-  if (matchedLockfiles.lenght === 0) throw new Error("No Lockfile detected.");
+  if (matchedLockfiles.length === 0) throw new Error("No Lockfile detected.");
   if (matchedLockfiles.length > 1)
     console.log(
       `Detected more than one lockfile. Using ${matchedLockfiles[0]}`,

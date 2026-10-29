@@ -1,0 +1,10 @@
+{
+  "name": "pnpm-out-of-sync",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "yaml": "^3.0.0",
+    "zod": "^4.0.0"
+  }
+}

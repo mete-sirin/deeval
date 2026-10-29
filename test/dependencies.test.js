@@ -19,6 +19,14 @@ const caretSatisfied = [
   ["^1.2.3", "1.9.0"],
   ["^0.2.3", "0.2.9"],
   ["^0.0.3", "0.0.3"],
+  ["~1.2.3", "1.2.9"],
+  ["1.2.3", "1.2.3"],
+  ["1.x", "1.9.9"],
+  ["*", "5.0.0"],
+  ["^1.0.0 || ^2.0.0", "2.1.0"],
+  [">=1.2.0 <1.5.0", "1.4.9"],
+  ["^2.0.0-beta.1", "2.0.0-beta.3"],
+  ["^18.0.0", "18.3.1(react@18.3.1)"], // pnpm peer suffix
 ];
 
 const caretUnsatisfied = [
@@ -26,6 +34,10 @@ const caretUnsatisfied = [
   ["^1.2.3", "2.0.0"],
   ["^0.2.3", "0.3.0"],
   ["^0.0.3", "0.0.4"],
+  ["~1.2.3", "1.3.0"],
+  ["1.2.3", "1.2.4"],
+  ["^1.0.0 || ^2.0.0", "3.0.0"],
+  ["^1.2.0", "1.3.0-beta.1"], // prereleases only match ranges that name them
 ];
 
 for (const [specifier, locked] of caretSatisfied) {
@@ -63,9 +75,20 @@ test("specifier mismatch between manifest and lockfile is a warning", () => {
 });
 
 test("non-numeric specifiers are reported as not checked", () => {
-  for (const specifier of ["latest", "workspace:*", "github:user/repo"]) {
+  for (const specifier of [
+    "latest",
+    "workspace:*",
+    "github:user/repo",
+    "npm:other-pkg@^1.0.0",
+  ]) {
     assert.deepEqual(codes(compareOne(specifier, "1.0.0")), [
       "DEPENDENCY_NOT_CHECKED",
     ]);
   }
+});
+
+test("non-semver locked versions are reported as not checked", () => {
+  assert.deepEqual(codes(compareOne("^1.0.0", "link:../pkg")), [
+    "DEPENDENCY_NOT_CHECKED",
+  ]);
 });

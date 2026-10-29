@@ -1,47 +1,7 @@
-const VERSION_SPECIFIER_REGEX = /^([^\d\s]+)?\s*(\d+(?:\.\d+){0,2})$/;
+import semver from "semver";
 
-const COMPARING_RULES = {
-  "^": (declaredVersion, lockedVersion) => {
-    let doesSatisfy = true;
-
-    for (let i = 0; i < 3; i++) {
-      const declared = declaredVersion[i] ?? 0;
-      const locked = lockedVersion[i] ?? 0;
-      if (locked < declared) {
-        doesSatisfy = false;
-        break;
-      }
-      if (locked > declared) break;
-    }
-    let upperVersionLimit;
-    for (let i = 0; i < 3; i++) {
-      if (declaredVersion[i] === 0) continue;
-      upperVersionLimit = [0, 0, 0];
-      upperVersionLimit[i] = declaredVersion[i] + 1;
-      break;
-    }
-
-    let counter = 0;
-    for (let i = 0; i < 3; i++) {
-      const upper = upperVersionLimit?.[i] ?? 0;
-      const locked = lockedVersion[i] ?? 0;
-      if (locked > upper) {
-        doesSatisfy = false;
-        break;
-      }
-      if (locked === upper) counter++;
-      if (locked < upper || counter === 3) break;
-    }
-    if (counter === 3) doesSatisfy = false; // upper limit is exclusive
-    return doesSatisfy;
-  },
-};
-
-const toParts = (versionString) =>
-  versionString
-    .trim()
-    .split(".")
-    .map((text) => Number(text));
+// pnpm appends resolved peers to versions, e.g. 1.2.3(react@18.0.0).
+const stripPeerSuffix = (version) => version.replace(/\(.*$/, "");
 
 /**
  * @param {Map<string, string>} declaredDependencies
@@ -77,22 +37,22 @@ export default function compareDependencies(
       });
     }
 
-    const declaredDependenciesVersion = ver.trim().match(VERSION_SPECIFIER_REGEX);
-    const operator = declaredDependenciesVersion?.[1];
-    const doesSatisfy = COMPARING_RULES[operator];
-    if (!doesSatisfy) {
+    // Dist-tags, git URLs, workspace: and npm: aliases are not semver ranges,
+    // and links or tarballs are not semver versions.
+    const lockedVersion = semver.valid(stripPeerSuffix(entry.version));
+    if (!semver.validRange(ver) || !lockedVersion) {
       findings.push({
         code: "DEPENDENCY_NOT_CHECKED",
         severity: "info",
-        message: `Unable to evaluate the version specifier ${ver} of ${name} because its syntax is not supported. Please check it manually.`,
+        message: `Unable to evaluate ${name}@${ver} (locked as ${entry.version}) because it is not a semver range. Please check it manually.`,
       });
       continue;
     }
-    if (!doesSatisfy(toParts(declaredDependenciesVersion[2]), toParts(entry.version))) {
+    if (!semver.satisfies(lockedVersion, ver)) {
       findings.push({
         code: "DEPENDENCY_RANGE_UNSATISFIED",
         severity: "error",
-        message: `${name} is locked at ${entry.version}, which does not satisfy ${ver}.`,
+        message: `${name} is locked at ${lockedVersion}, which does not satisfy ${ver}.`,
         suggestion: syncSuggestion,
       });
     }

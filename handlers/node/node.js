@@ -38,9 +38,9 @@ const nodeRuntimeHandler = {
       const installedNodeVersion = process.versions.node;
       compareNodeVersions(nodeRequirement, installedNodeVersion);
     }
-
+    let declaredDependencies;
     try {
-      const declaredDependencies = new Map(
+      declaredDependencies = new Map(
         Object.entries(packageJsonContent.dependencies),
       );
     } catch (err) {

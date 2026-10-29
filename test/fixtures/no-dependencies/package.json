@@ -1,0 +1,6 @@
+{
+  "name": "no-dependencies",
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -20,6 +20,12 @@ export default function compareDependencies(
       isSame = false;
       differentDependenciesArr.push(name);
     }
+    if (!declaredDependenciesVersion) {
+      console.log(
+        `Warning: Unable to evaluate the version specifier ${ver} of ${name} because its syntax is not supported. Please check it manually.`,
+      );
+      continue;
+    }
     const operator = declaredDependenciesVersion[1];
     const declaredVersion = declaredDependenciesVersion[2]
       .trim()

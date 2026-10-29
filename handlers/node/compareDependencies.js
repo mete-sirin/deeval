@@ -71,6 +71,7 @@ const COMPARING_RULES = {
       if (locked === upper) counter++;
       if (locked < upper || counter === 3) break;
     }
+    if (counter === 3) doesSatisfy = false; // upper limit is exclusive
     if (doesSatisfy) console.log("passes");
     else console.log("fails");
   },

@@ -1,0 +1,9 @@
+{
+  "name": "no-lockfile",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1"
+  }
+}

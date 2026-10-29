@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { after } from "node:test";
 
-const mainPath = path.resolve(import.meta.dirname, "../main.js");
+const binPath = path.resolve(import.meta.dirname, "../bin/deeval.js");
 
 // deeval is started via process.execPath, so PATH only needs the binaries it
 // looks up itself. A fake `bun` keeps results independent of the machine.
@@ -18,8 +18,8 @@ after(() => {
   fs.rmSync(emptyBinDir, { recursive: true, force: true });
 });
 
-function runIn(fixtureName, { binDir = fakeBinDir } = {}) {
-  return spawnSync(process.execPath, [mainPath], {
+function runIn(fixtureName, { binDir = fakeBinDir, args = [] } = {}) {
+  return spawnSync(process.execPath, [binPath, ...args], {
     cwd: path.join(import.meta.dirname, "fixtures", fixtureName),
     encoding: "utf8",
     env: { ...process.env, PATH: binDir },
@@ -35,9 +35,37 @@ test("evaluates a pnpm project end to end", () => {
   assert.doesNotMatch(result.stdout, /Suggested actions/);
 });
 
-test("a project without dependencies does not crash", () => {
+test("a project without dependencies has nothing to install", () => {
   const result = runIn("no-dependencies");
   assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\[OK\] +No dependencies are declared in package\.json/);
+  assert.doesNotMatch(result.stdout, /node_modules/);
+  assert.match(result.stdout, /Summary: no problems found/);
+});
+
+test("--help prints usage without inspecting", () => {
+  const result = runIn("not-javascript", { args: ["--help"] });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^Usage: deeval \[options\]/);
+  assert.doesNotMatch(result.stdout, /No package\.json found/);
+});
+
+test("--version prints the package version", () => {
+  const { version } = JSON.parse(
+    fs.readFileSync(path.resolve(import.meta.dirname, "../package.json"), "utf8"),
+  );
+  for (const flag of ["--version", "-v"]) {
+    const result = runIn("not-javascript", { args: [flag] });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), version);
+  }
+});
+
+test("an unknown option exits 2 with usage on stderr", () => {
+  const result = runIn("pnpm-basic", { args: ["--json"] });
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /deeval: unknown option --json/);
+  assert.equal(result.stdout, "");
 });
 
 test("an out-of-sync project exits 1 and suggests one install", () => {
@@ -101,7 +129,7 @@ test("an installed npm project passes the install check", () => {
 
 test("pnpm's symlinked node_modules layout is followed", () => {
   const result = runIn("pnpm-basic");
-  assert.match(result.stdout, /\[OK\] +All 1 dependencies are installed/);
+  assert.match(result.stdout, /\[OK\] +1 dependency is installed at its locked version\./);
 });
 
 test("an uninstalled project warns and suggests installing", () => {

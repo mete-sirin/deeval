@@ -4,6 +4,7 @@ import checkNodeRuntime from "./runtime/node.js";
 import resolveActiveLockfile from "./lockfiles/index.js";
 import { DEPENDENCY_SECTIONS, UnsupportedLockfileError } from "./lockfiles/shared.js";
 import compareDependencies from "./checks/dependencies.js";
+import checkInstalledDependencies from "./checks/installed.js";
 
 /**
  * @typedef {{
@@ -87,6 +88,12 @@ export default function inspect(projectRoot) {
   );
   result.findings.push(
     ...compareDependencies(declaredDependencies, lockedDependencies, lockfile),
+    ...checkInstalledDependencies(
+      projectRoot,
+      lockedDependencies,
+      manifest,
+      lockfile,
+    ),
   );
   return result;
 }

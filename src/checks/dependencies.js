@@ -1,7 +1,6 @@
 import semver from "semver";
-
-// pnpm appends resolved peers to versions, e.g. 1.2.3(react@18.0.0).
-const stripPeerSuffix = (version) => version.replace(/\(.*$/, "");
+import { stripPeerSuffix } from "../lockfiles/shared.js";
+import { installSuggestion } from "../report.js";
 
 /**
  * @param {Map<string, string>} declaredDependencies
@@ -14,7 +13,7 @@ export default function compareDependencies(
   lockedDependencies,
   { lockfileName, packageManager },
 ) {
-  const syncSuggestion = `Run \`${packageManager} install\` to bring ${lockfileName} in sync with package.json.`;
+  const syncSuggestion = installSuggestion(packageManager, lockfileName);
   const findings = [];
 
   for (const [name, ver] of declaredDependencies) {

@@ -1,5 +1,5 @@
 {
-  "name": "deeval",
+  "name": "@mete-sirin/deeval",
   "version": "1.0.0",
   "description": "Checks a Node.js or Bun project: runtime version, manifest vs. lockfile, and installed packages",
   "keywords": [
@@ -32,6 +32,9 @@
     "bin",
     "src"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "start": "node bin/deeval.js",
     "test": "node --test",

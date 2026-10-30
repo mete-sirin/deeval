@@ -22,20 +22,20 @@ You need Node.js 18 or newer.
 Run deeval in the root directory of the project you want to check, where its `package.json` is:
 
 ```bash
-npx deeval
+npx @mete-sirin/deeval
 # or
-pnpm dlx deeval
-bunx deeval
+pnpm dlx @mete-sirin/deeval
+bunx @mete-sirin/deeval
 ```
 
 Or install it globally:
 
 ```bash
-npm install -g deeval
+npm install -g @mete-sirin/deeval
 deeval
 ```
 
-deeval inspects the current directory and takes no arguments. `deeval --help` prints usage and `deeval --version` prints the version.
+The package is published under the `@mete-sirin` scope, but the command it installs is `deeval`. deeval inspects the current directory and takes no arguments. `deeval --help` prints usage and `deeval --version` prints the version.
 
 Example output for a project whose lockfile is out of date:
 
